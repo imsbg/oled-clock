@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="or">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <!-- SEO - Search Engine Optimization -->
+<title>OLED Clock for Desktop</title>
+<meta name="description" content="Instantly launch a minimalist, full screen OLED clock directly in your browser. ">
+<meta name="author" content="Sandeep Biswal G"> <!-- Or your name/handle -->
+<link rel="canonical" href="https://imsbg.github.io/oled-clock" />
+
+<!-- Open Graph / Facebook / Social Media Meta Tags -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://imsbg.github.io/oled-clock">
+<meta property="og:title" content="OLED Clock">
+<meta property="og:description" content="A minimalist, full screen OLED clock directly in your browser.">
+<meta property="og:image" content="https://imsbg.github.io/oled-clock/og-image.png"> <!-- CREATE AND UPLOAD THIS IMAGE -->
+
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://imsbg.github.io/oled-clock">
+<meta name="twitter:title" content="OLED Clock">
+<meta name="twitter:description" content="A minimalist, full screen OLED clock directly in your browser.">
+<meta name="twitter:image" content="https://imsbg.github.io/oled-clock/og-image.png">
+    
+    <!-- Google Fonts for Odia characters -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Oriya:wght@400;700&family=Baloo+Bhaina+2:wght@400;700&family=Alkatra:wght@400&family=Anek+Odia:wght@100;700&display=swap" rel="stylesheet">
+
+    <!-- CSS (Stylesheets) -->
+    <style>
+        :root {
+            --time-color: #FFFFFF;
+            --secondary-color: #808080;
+            --background-color: #000000;
+            --ui-background: #1c1c1e;
+            --border-color: #333;
+            --accent-color: #0A84FF;
+        }
+
+        html, body {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background-color: var(--background-color);
+            color: var(--time-color); font-family: 'Noto Sans Oriya', sans-serif;
+            font-weight: 700; user-select: none; transition: opacity 0.5s ease;
+        }
+
+        body:fullscreen:not(.mouse-moving) { cursor: none; }
+
+        #main-content {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; text-align: center; 
+            transition: filter 0.3s ease-in-out, transform 2.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        body.modal-open #main-content,
+        body.sidebar-open #main-content { filter: blur(8px); }
+
+        #clock { display: flex; align-items: baseline; }
+        #time { font-size: 20vw; line-height: 1; color: var(--time-color); }
+        #seconds { font-size: 6vw; margin-left: 1.5vw; font-weight: 400; color: var(--secondary-color); transition: opacity 0.3s, visibility 0.3s; }
+        #date { font-size: 3vw; font-weight: 400; margin-top: 2vh; color: var(--secondary-color); transition: opacity 0.3s, visibility 0.3s; }
+        .hidden { opacity: 0; visibility: hidden; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--ui-background); padding: 30px 40px; border-radius: 12px; color: #fff; max-width: 500px; text-align: left; border: 1px solid var(--border-color); }
+        
+        /* Widen the Info Modal as requested */
+        #info-modal .modal-content {
+            max-width: 560px;
+        }
+
+        .modal-content h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .shortcut-list { list-style: none; padding: 0; }
+        .shortcut-list li { margin-bottom: 12px; font-size: 1.1rem; display: flex; align-items: center; }
+        .shortcut-list li kbd { display: inline-block; background-color: #333; color: #fff; padding: 4px 8px; border-radius: 4px; border: 1px solid #555; font-size: 1rem; min-width: 20px; text-align: center; margin-right: 15px; }
+        .modal-footer { margin-top: 20px; padding-top: 15px; border-top: 1px solid #444; font-size: 0.9rem; color: #aaa; }
+        .close-hint { margin-top: 25px; text-align: center; font-size: 0.9em; color: #888; }
+        
+        /* Control Grids & Selects */
+        .control-grid { display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: center; margin-bottom: 20px; }
+        .control-grid label { font-size: 1.1rem; }
+        .control-grid select { background-color: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 6px; font-size: 1rem; width: 100%; font-family: inherit; }
+        .control-grid input[type="color"] { -webkit-appearance: none; appearance: none; width: 100%; height: 40px; background-color: transparent; border: none; cursor: pointer; }
+        .control-grid input[type="color"]::-webkit-color-swatch { border-radius: 8px; border: 1px solid #555; }
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #444; border-radius: 5px; cursor: pointer; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 50%; border: 2px solid var(--accent-color); }
+        #reset-settings-btn { width: 100%; background-color: #553333; color: #fff; border: 1px solid #775555; padding: 10px 14px; border-radius: 6px; cursor: pointer; margin-top: 20px; font-size: 1rem; transition: background-color 0.2s; }
+        #reset-settings-btn:hover { background-color: #774444; }
+        
+        /* Settings Icon & Sidebar */
+        #settings-button-area { position: fixed; bottom: 0; right: 0; width: 80px; height: 80px; z-index: 998; }
+        #settings-button { position: absolute; bottom: 20px; right: 20px; width: 30px; height: 30px; cursor: pointer; opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease; }
+        #settings-button-area:hover #settings-button { opacity: 1; transform: scale(1.1) rotate(20deg); }
+        #settings-button svg { width: 100%; height: 100%; fill: #808080; }
+        body.modal-open #settings-button-area, body.sidebar-open #settings-button-area { display: none; }
+        #settings-sidebar { position: fixed; top: 0; right: -380px; width: 340px; height: 100%; background: var(--ui-background); box-shadow: -5px 0 15px rgba(0,0,0,0.5); transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 1001; overflow-y: auto; }
+        #settings-sidebar.open { right: 0; }
+        .sidebar-content { padding: 20px; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+        #close-sidebar-btn { background: none; border: none; color: #aaa; font-size: 2rem; cursor: pointer; }
+        .settings-section { margin-bottom: 30px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .setting-item button { background-color: #333; color: #fff; border: 1px solid #555; padding: 6px 14px; border-radius: 6px; cursor: pointer; min-width: 100px; }
+
+        /* Notification & Mobile Splash */
+        #notification { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background-color: var(--ui-background); color: #fff; padding: 12px 24px; border-radius: 8px; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.5s, visibility 0.5s; }
+        #notification.show { opacity: 1; visibility: visible; }
+        #mobile-splash-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--background-color); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fff; padding: 20px; }
+        #mobile-splash-screen h1 { font-size: 2rem; }
+        #mobile-splash-screen p { font-size: 1.1rem; max-width: 400px; margin: 15px 0 30px 0; color: #aaa; }
+        #enter-fullscreen-btn { background-color: var(--accent-color); color: #fff; border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            #time { font-size: 28vw; } #seconds { font-size: 10vw; } #date { font-size: 6vw; }
+            .modal-content, #info-modal .modal-content { max-width: 85%; }
+            #settings-sidebar { width: 100%; right: -100%;}
+        }
+    </style>
+</head>
+<body>
+    <div id="mobile-splash-screen">
+        <h1>Oled Time କୁ ସ୍ଵାଗତ</h1>
+        <p>ସର୍ବୋତ୍ତମ ଅନୁଭବ ପାଇଁ, ଏହି ଘଣ୍ଟାକୁ ପୂର୍ଣ୍ଣ-ସ୍କ୍ରିନ୍ ଏବଂ ଲ୍ୟାଣ୍ଡସ୍କେପ୍ ମୋଡରେ ବ୍ୟବହାର କରନ୍ତୁ।</p>
+        <button id="enter-fullscreen-btn">ଘଣ୍ଟା ଦେଖନ୍ତୁ</button>
+    </div>
+    <main id="main-content">
+        <div id="clock"><span id="time"></span><span id="seconds"></span></div>
+        <div id="date"></div>
+    </main>
+    <div id="notification"></div>
+    <div id="settings-button-area">
+        <div id="settings-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9.9 15.9-19.4 15.9H181.9c-9.6 0-17.4-6.8-19.4-15.9l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L49.9 416.3c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C50.4 273.1 49.8 264.6 49.8 256s.6-17.1 1.7-25.4L7.2 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9.9-15.9 19.4-15.9h148.2c9.6 0 17.4 6.8 19.4 15.9l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg></div>
+    </div>
+    <aside id="settings-sidebar">
+        <div class="sidebar-content"><div class="sidebar-header"><h2>ସେଟିଂସ୍</h2><button id="close-sidebar-btn">&times;</button></div>
+            <div class="settings-section"><h3>ଡିସପ୍ଲେ ସେଟିଂସ୍</h3>
+                <div class="setting-item"><span>ତାରିଖ</span><button id="toggle-date-btn"></button></div>
+                <div class="setting-item"><span>ସେକେଣ୍ଡ</span><button id="toggle-seconds-btn"></button></div>
+                <div class="setting-item"><span>ସମୟ ଫର୍ମାଟ୍</span><button id="toggle-format-btn"></button></div>
+                <div class="setting-item"><span>ଓଲେଡ୍ ସୁରକ୍ଷା</span><button id="toggle-burn-in-btn"></button></div>
+            </div>
+            <div class="settings-section"><h3>କୀବୋର୍ଡ୍ ସର୍ଟକଟ୍</h3>
+                <ul class="shortcut-list">
+                    <li><kbd>f</kbd> - ପୂର୍ଣ୍ଣ ସ୍କ୍ରିନ</li>
+                    <li><kbd>d</kbd> - ତାରିଖ</li>
+                    <li><kbd>s</kbd> - ସେକେଣ୍ଡ</li>
+                    <li><kbd>m</kbd> - ଓଲେଡ୍ ସୁରକ୍ଷା</li>
+                    <li><kbd>c</kbd> - ଡିସପ୍ଲେ</li>
+                    <li><kbd>a</kbd> - ଆକାର</li>
+                    <li><kbd>o</kbd> - ଅସ୍ପଷ୍ଟତା</li>
+                    <li><kbd>t</kbd> - ୧୨/୨୪ ଘଣ୍ଟା</li>
+                    <li><kbd>v / l</kbd> - ଫଣ୍ଟ ବଦଳାନ୍ତୁ</li>
+                    <li><kbd>i</kbd> - ସୂଚନା</li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+    <!-- Modals -->
+    <div id="info-modal" class="modal-overlay hidden"><div class="modal-content"><h2>କୀବୋର୍ଡ୍ ସର୍ଟକଟ୍</h2><ul class="shortcut-list">
+        <li><kbd>f</kbd> - ପୂର୍ଣ୍ଣ ସ୍କ୍ରିନ</li>
+        <li><kbd>d</kbd> - ତାରିଖ</li>
+        <li><kbd>s</kbd> - ସେକେଣ୍ଡ</li>
+        <li><kbd>m</kbd> - ଓଲେଡ୍ ସୁରକ୍ଷା</li>
+        <li><kbd>c</kbd> - ଡିସପ୍ଲେ</li>
+        <li><kbd>a</kbd> - ଆକାର</li>
+        <li><kbd>o</kbd> - ଅସ୍ପଷ୍ଟତା</li>
+        <li><kbd>t</kbd> - ୧୨/୨୪ ଘଣ୍ଟା</li>
+        <li><kbd>l</kbd> - ଫଣ୍ଟ ବଦଳାନ୍ତୁ</li>
+        <li><kbd>i</kbd> - ସୂଚନା</li>
+    </ul><div class="modal-footer"><p>ନିର୍ମାତା: <b>ସନ୍ଦୀପ୍ ବିଶ୍ଵାଳ ଜି</b></p><a href="https://www.instagram.com/sandeepbiswalg" target="_blank" style="color:var(--accent-color)">Follow Me</a></div><p class="close-hint">ବନ୍ଦ କରିବା ପାଇଁ 'i' ଦବାନ୍ତୁ</p></div></div>
+    <div id="display-modal" class="modal-overlay hidden"><div class="modal-content"><h2>ଡିସପ୍ଲେ ସେଟିଂସ୍</h2><div class="control-grid"><label for="timeColorPicker">ଘଣ୍ଟା ଓ ମିନିଟ୍:</label><input type="color" id="timeColorPicker" value="#FFFFFF"><label for="secondaryColorPicker">ସେକେଣ୍ଡ ଓ ତାରିଖ:</label><input type="color" id="secondaryColorPicker" value="#808080"><label for="font-selector">ଫଣ୍ଟ ବାଛନ୍ତୁ:</label><select id="font-selector"><option value="'Noto Sans Oriya', sans-serif">ନୋଟୋ ସାନ୍ସ ଓଡ଼ିଆ</option><option value="'Baloo Bhaina 2', cursive">ବାଲୁ ଭାଇନା ୨</option><option value="'Alkatra', cursive">ଅଲକାତରା</option><option value="'Anek Odia', sans-serif">ଅନେକ ଓଡ଼ିଆ</option></select></div><p class="close-hint">ବନ୍ଦ କରିବା ପାଇଁ 'c' ଦବାନ୍ତୁ</p></div></div>
+    <div id="resize-modal" class="modal-overlay hidden"><div class="modal-content"><h2>ଆକାର ବଦଳାନ୍ତୁ</h2><div class="control-grid"><label for="timeSizeSlider">ସମୟ ଆକାର:</label><input type="range" id="timeSizeSlider" min="10" max="40" value="20" step="0.5"><label for="secondsSizeSlider">ସେକେଣ୍ଡ ଆକାର:</label><input type="range" id="secondsSizeSlider" min="2" max="15" value="6" step="0.2"><label for="dateSizeSlider">ତାରିଖ ଆକାର:</label><input type="range" id="dateSizeSlider" min="1" max="10" value="3" step="0.1"></div><button id="reset-settings-btn">ସମସ୍ତ ସେଟିଂସ୍ ରିସେଟ୍ କରନ୍ତୁ</button><p class="close-hint">ବନ୍ଦ କରିବା ପାଇଁ 'a' ଦବାନ୍ତୁ</p></div></div>
+
+    <script>
+        // DOM Elements
+        const bodyEl = document.body;
+        const mainContentEl = document.getElementById('main-content');
+        const timeEl = document.getElementById('time');
+        const secondsEl = document.getElementById('seconds');
+        const dateEl = document.getElementById('date');
+        const notificationEl = document.getElementById('notification');
+        const mobileSplashScreen = document.getElementById('mobile-splash-screen');
+        
+        // Modals & Sidebar
+        const infoModal = document.getElementById('info-modal');
+        const displayModal = document.getElementById('display-modal');
+        const resizeModal = document.getElementById('resize-modal');
+        const sidebar = document.getElementById('settings-sidebar');
+
+        // Buttons & Controls
+        const enterFullscreenBtn = document.getElementById('enter-fullscreen-btn');
+        const settingsButton = document.getElementById('settings-button');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const toggleDateBtn = document.getElementById('toggle-date-btn');
+        const toggleSecondsBtn = document.getElementById('toggle-seconds-btn');
+        const toggleFormatBtn = document.getElementById('toggle-format-btn');
+        const toggleBurnInBtn = document.getElementById('toggle-burn-in-btn');
+        const resetSettingsBtn = document.getElementById('reset-settings-btn');
+        const fontSelector = document.getElementById('font-selector');
+        const timeColorPicker = document.getElementById('timeColorPicker');
+        const secondaryColorPicker = document.getElementById('secondaryColorPicker');
+        const timeSizeSlider = document.getElementById('timeSizeSlider');
+        const secondsSizeSlider = document.getElementById('secondsSizeSlider');
+        const dateSizeSlider = document.getElementById('dateSizeSlider');
+
+        // Odia Data
+        const odiaNumerals = ['୦', '୧', '୨', '୩', '୪', '୫', '୬', '୭', '୮', '୯'];
+        const odiaDays = ['ରବିବାର', 'ସୋମବାର', 'ମଙ୍ଗଳବାର', 'ବୁଧବାର', 'ଗୁରୁବାର', 'ଶୁକ୍ରବାର', 'ଶନିବାର'];
+        const odiaMonths = ['ଜାନୁଆରୀ', 'ଫେବୃଆରୀ', 'ମାର୍ଚ୍ଚ', 'ଅପ୍ରେଲ', 'ମଇ', 'ଜୁନ୍', 'ଜୁଲାଇ', 'ଅଗଷ୍ଟ', 'ସେପ୍ଟେମ୍ବର', 'ଅକ୍ଟୋବର', 'ନଭେମ୍ବର', 'ଡିସେମ୍ବର'];
+
+        // State & Constants
+        const SETTINGS_KEY = 'oledTimeSettings';
+        let is24HourFormat = false;
+        let isBurnInProtectionOn = false;
+        let opacityIndex = 0;
+        let mouseMoveTimeout;
+        const opacities = [1, 0.75, 0.5, 0.25, 0.15, 0.1];
+        const DEFAULT_SIZES = { time: 20, seconds: 6, date: 3 };
+        const DEFAULT_FONT = "'Noto Sans Oriya', sans-serif";
+
+        const toOdiaNumber = (num) => String(num).split('').map(digit => odiaNumerals[parseInt(digit, 10)]).join('');
+        const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+        // --- Settings Management ---
+        function saveSettings() {
+            const settings = {
+                timeColor: timeColorPicker.value,
+                secondaryColor: secondaryColorPicker.value,
+                fontFamily: fontSelector.value,
+                timeSize: timeSizeSlider.value,
+                secondsSize: secondsSizeSlider.value,
+                dateSize: dateSizeSlider.value,
+                isDateHidden: dateEl.classList.contains('hidden'),
+                isSecondsHidden: secondsEl.classList.contains('hidden'),
+                is24Hour: is24HourFormat,
+                isBurnInOn: isBurnInProtectionOn
+            };
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const savedSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+            if (!savedSettings) return;
+
+            document.documentElement.style.setProperty('--time-color', savedSettings.timeColor || '#FFFFFF');
+            timeColorPicker.value = savedSettings.timeColor || '#FFFFFF';
+            document.documentElement.style.setProperty('--secondary-color', savedSettings.secondaryColor || '#808080');
+            secondaryColorPicker.value = savedSettings.secondaryColor || '#808080';
+
+            bodyEl.style.fontFamily = savedSettings.fontFamily || DEFAULT_FONT;
+            fontSelector.value = savedSettings.fontFamily || DEFAULT_FONT;
+
+            const timeSize = savedSettings.timeSize || DEFAULT_SIZES.time;
+            timeEl.style.fontSize = `${timeSize}vw`;
+            timeSizeSlider.value = timeSize;
+            const secondsSize = savedSettings.secondsSize || DEFAULT_SIZES.seconds;
+            secondsEl.style.fontSize = `${secondsSize}vw`;
+            secondsSizeSlider.value = secondsSize;
+            const dateSize = savedSettings.dateSize || DEFAULT_SIZES.date;
+            dateEl.style.fontSize = `${dateSize}vw`;
+            dateSizeSlider.value = dateSize;
+
+            if (savedSettings.isDateHidden) dateEl.classList.add('hidden');
+            if (savedSettings.isSecondsHidden) secondsEl.classList.add('hidden');
+            is24HourFormat = savedSettings.is24Hour || false;
+            isBurnInProtectionOn = savedSettings.isBurnInOn || false; 
+            if(isBurnInProtectionOn) mainContentEl.style.transform = `translate(${(Math.random()*8-4).toFixed(2)}vw, ${(Math.random()*8-4).toFixed(2)}vh)`;
+        }
+
+        function resetAllSettings() {
+            localStorage.removeItem(SETTINGS_KEY);
+            document.documentElement.style.setProperty('--time-color', '#FFFFFF');
+            timeColorPicker.value = '#FFFFFF';
+            document.documentElement.style.setProperty('--secondary-color', '#808080');
+            secondaryColorPicker.value = '#808080';
+            bodyEl.style.fontFamily = DEFAULT_FONT;
+            fontSelector.value = DEFAULT_FONT;
+            timeEl.style.fontSize = `${DEFAULT_SIZES.time}vw`;
+            secondsEl.style.fontSize = `${DEFAULT_SIZES.seconds}vw`;
+            dateEl.style.fontSize = `${DEFAULT_SIZES.date}vw`;
+            timeSizeSlider.value = DEFAULT_SIZES.time;
+            secondsSizeSlider.value = DEFAULT_SIZES.seconds;
+            dateSizeSlider.value = DEFAULT_SIZES.date;
+
+            dateEl.classList.remove('hidden');
+            secondsEl.classList.remove('hidden');
+            is24HourFormat = false;
+            if (isBurnInProtectionOn) toggleBurnInProtection();
+            
+            updateClock();
+            updateSidebarUI();
+            showNotification("ସମସ୍ତ ସେଟିଂସ୍ ରିସେଟ୍ ହୋଇଗଲା");
+        }
+        
+        // --- Core Functions ---
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            if (!is24HourFormat) hours = hours % 12 || 12;
+            
+            timeEl.textContent = `${toOdiaNumber(hours)}:${toOdiaNumber(String(now.getMinutes()).padStart(2, '0'))}`;
+            secondsEl.textContent = toOdiaNumber(String(now.getSeconds()).padStart(2, '0'));
+            dateEl.textContent = `${odiaDays[now.getDay()]} ${toOdiaNumber(now.getDate())} ତାରିଖ ${odiaMonths[now.getMonth()]} ${toOdiaNumber(now.getFullYear())}`;
+
+            if (isBurnInProtectionOn && now.getSeconds() === 0) {
+                const x = (Math.random() * 8 - 4).toFixed(2);
+                const y = (Math.random() * 8 - 4).toFixed(2);
+                mainContentEl.style.transform = `translate(${x}vw, ${y}vh)`;
+            }
+        }
+
+        function updateSidebarUI() {
+            toggleDateBtn.textContent = dateEl.classList.contains('hidden') ? 'ବନ୍ଦ' : 'ଚାଲୁ';
+            toggleSecondsBtn.textContent = secondsEl.classList.contains('hidden') ? 'ବନ୍ଦ' : 'ଚାଲୁ';
+            toggleFormatBtn.textContent = is24HourFormat ? '୨୪ ଘଣ୍ଟା' : '୧୨ ଘଣ୍ଟା';
+            toggleBurnInBtn.textContent = isBurnInProtectionOn ? 'ଚାଲୁ' : 'ବନ୍ଦ';
+        }
+
+        function showNotification(message) {
+            notificationEl.textContent = message;
+            notificationEl.classList.add('show');
+            setTimeout(() => notificationEl.classList.remove('show'), 2500);
+        }
+
+        // --- Event Handlers & Toggles ---
+        function toggleVisibility(element) {
+            element.classList.toggle('hidden');
+            updateSidebarUI();
+            saveSettings();
+        }
+
+        function toggleBurnInProtection() {
+            isBurnInProtectionOn = !isBurnInProtectionOn;
+            if (!isBurnInProtectionOn) {
+                mainContentEl.style.transform = 'translate(0, 0)';
+            } else {
+                mainContentEl.style.transform = `translate(${(Math.random()*8-4).toFixed(2)}vw, ${(Math.random()*8-4).toFixed(2)}vh)`;
+            }
+            showNotification(`ଓଲେଡ୍ ବର୍ଣ୍-ଇନ୍ ସୁରକ୍ଷା ${isBurnInProtectionOn ? 'ଚାଲୁ' : 'ବନ୍ଦ'}`);
+            updateSidebarUI();
+            saveSettings();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(console.error);
+            else if (document.exitFullscreen) document.exitFullscreen().catch(console.error);
+        }
+
+        function cycleOpacity() {
+            opacityIndex = (opacityIndex + 1) % opacities.length;
+            bodyEl.style.opacity = opacities[opacityIndex];
+        }
+
+        function closeAllPopups() {
+            [infoModal, displayModal, resizeModal].forEach(m => m.classList.add('hidden'));
+            sidebar.classList.remove('open');
+            bodyEl.className = bodyEl.className.replace(/modal-open|sidebar-open/g, '').trim();
+        }
+
+        function toggleModal(modal) {
+            const isHidden = modal.classList.contains('hidden');
+            if (isHidden) closeAllPopups();
+            modal.classList.toggle('hidden');
+            bodyEl.classList.toggle('modal-open', !modal.classList.contains('hidden'));
+        }
+
+        function handleKeydown(e) {
+            if (e.key === ' ' && e.target === document.body) e.preventDefault();
+            if (e.key === 'Escape') { closeAllPopups(); return; }
+            
+            const key = e.key.toLowerCase();
+            if (key === 'i') { toggleModal(infoModal); return; }
+            if (key === 'c') { toggleModal(displayModal); return; }
+            if (key === 'a') { toggleModal(resizeModal); return; }
+
+            if (bodyEl.classList.contains('modal-open') || bodyEl.classList.contains('sidebar-open')) return;
+
+            switch (key) {
+                case 'f': case ' ': toggleFullscreen(); break;
+                case 'd': toggleVisibility(dateEl); break;
+                case 's': toggleVisibility(secondsEl); break;
+                case 'm': toggleBurnInProtection(); break;
+                case 't': is24HourFormat = !is24HourFormat; updateClock(); updateSidebarUI(); saveSettings(); break;
+                case 'o': cycleOpacity(); break;
+                case 'v':
+                case 'l': {
+                    const numFonts = fontSelector.options.length;
+                    const nextIndex = (fontSelector.selectedIndex + 1) % numFonts;
+                    fontSelector.selectedIndex = nextIndex;
+                    fontSelector.dispatchEvent(new Event('change'));
+                    showNotification(`ଫଣ୍ଟ: ${fontSelector.options[nextIndex].text}`);
+                    break;
+                }
+            }
+        }
+        
+        async function handleMobileEnter() {
+            mobileSplashScreen.style.display = 'none';
+            await toggleFullscreen();
+            try { await screen.orientation.lock('landscape'); } catch (error) { console.warn('Orientation lock failed:', error.message); }
+            if (!isBurnInProtectionOn) toggleBurnInProtection();
+        }
+        
+        // --- Initialization ---
+        function init() {
+            loadSettings();
+
+            if (isMobile()) {
+                mobileSplashScreen.style.display = 'flex';
+                enterFullscreenBtn.addEventListener('click', handleMobileEnter);
+                document.getElementById('settings-button-area').style.display = 'none';
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+            updateSidebarUI();
+
+            document.addEventListener('keydown', handleKeydown);
+            settingsButton.addEventListener('click', () => { closeAllPopups(); sidebar.classList.add('open'); bodyEl.classList.add('sidebar-open'); });
+            closeSidebarBtn.addEventListener('click', closeAllPopups);
+            
+            toggleDateBtn.addEventListener('click', () => toggleVisibility(dateEl));
+            toggleSecondsBtn.addEventListener('click', () => toggleVisibility(secondsEl));
+            toggleFormatBtn.addEventListener('click', () => { is24HourFormat = !is24HourFormat; updateClock(); updateSidebarUI(); saveSettings(); });
+            toggleBurnInBtn.addEventListener('click', toggleBurnInProtection);
+            
+            [infoModal, displayModal, resizeModal].forEach(modal => {
+                modal.addEventListener('click', (e) => { if (e.target === modal) toggleModal(modal); });
+            });
+            
+            fontSelector.addEventListener('change', (e) => { bodyEl.style.fontFamily = e.target.value; saveSettings(); });
+            timeColorPicker.addEventListener('input', (e) => { document.documentElement.style.setProperty('--time-color', e.target.value); saveSettings(); });
+            secondaryColorPicker.addEventListener('input', (e) => { document.documentElement.style.setProperty('--secondary-color', e.target.value); saveSettings(); });
+            timeSizeSlider.addEventListener('input', (e) => { timeEl.style.fontSize = `${e.target.value}vw`; saveSettings(); });
+            secondsSizeSlider.addEventListener('input', (e) => { secondsEl.style.fontSize = `${e.target.value}vw`; saveSettings(); });
+            dateSizeSlider.addEventListener('input', (e) => { dateEl.style.fontSize = `${e.target.value}vw`; saveSettings(); });
+            resetSettingsBtn.addEventListener('click', resetAllSettings);
+
+            document.addEventListener('mousemove', () => {
+                bodyEl.classList.add('mouse-moving');
+                clearTimeout(mouseMoveTimeout);
+                mouseMoveTimeout = setTimeout(() => { bodyEl.classList.remove('mouse-moving'); }, 2500);
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
