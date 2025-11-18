@@ -5,32 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     
     <!-- SEO - Search Engine Optimization -->
-<title>OLED Clock for Desktop</title>
-<meta name="description" content="Instantly launch a minimalist, full screen OLED clock directly in your browser. ">
-<meta name="author" content="Sandeep Biswal G"> <!-- Or your name/handle -->
-<link rel="canonical" href="https://imsbg.github.io/oled-clock" />
+    <title>OLED Clock for Desktop</title>
+    <meta name="description" content="Instantly launch a minimalist, full screen OLED clock directly in your browser. ">
+    <meta name="author" content="Sandeep Biswal G"> <!-- Or your name/handle -->
+    <link rel="canonical" href="https://imsbg.github.io/oled-clock" />
 
-<!-- Open Graph / Facebook / Social Media Meta Tags -->
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://imsbg.github.io/oled-clock">
-<meta property="og:title" content="OLED Clock">
-<meta property="og:description" content="A minimalist, full screen OLED clock directly in your browser.">
-<meta property="og:image" content="https://imsbg.github.io/oled-clock/og-image.png"> <!-- CREATE AND UPLOAD THIS IMAGE -->
+    <!-- Open Graph / Facebook / Social Media Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://imsbg.github.io/oled-clock">
+    <meta property="og:title" content="OLED Clock">
+    <meta property="og:description" content="A minimalist, full screen OLED clock directly in your browser.">
+    <meta property="og:image" content="https://imsbg.github.io/oled-clock/icon-512x512.png"> 
 
-<!-- Twitter Card Meta Tags -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:url" content="https://imsbg.github.io/oled-clock">
-<meta name="twitter:title" content="OLED Clock">
-<meta name="twitter:description" content="A minimalist, full screen OLED clock directly in your browser.">
-<meta name="twitter:image" content="https://imsbg.github.io/oled-clock/og-image.png">
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://imsbg.github.io/oled-clock">
+    <meta name="twitter:title" content="OLED Clock">
+    <meta name="twitter:description" content="A minimalist, full screen OLED clock directly in your browser.">
+    <meta name="twitter:image" content="https://imsbg.github.io/oled-clock/icon-512x512.png">
     
+    <!-- PWA (Progressive Web App) Additions -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"> 
+
     <!-- Google Fonts for Odia characters -->
+    <!-- Recommended Favicon Code -->
+    <link rel="icon" type="image/png" href="https://imsbg.github.io/oled-clock/icon-512x512.png">
+    <link rel="apple-touch-icon" href="https://imsbg.github.io/oled-clock/icon-512x512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Oriya:wght@400;700&family=Baloo+Bhaina+2:wght@400;700&family=Alkatra:wght@400&family=Anek+Odia:wght@100;700&display=swap" rel="stylesheet">
 
     <!-- CSS (Stylesheets) -->
     <style>
+        /* YOUR EXISTING CSS CODE IS UNCHANGED */
         :root {
             --time-color: #FFFFFF;
             --secondary-color: #808080;
@@ -122,6 +130,7 @@
     </style>
 </head>
 <body>
+    <!-- YOUR EXISTING BODY CONTENT IS UNCHANGED -->
     <div id="mobile-splash-screen">
         <h1>Oled Time କୁ ସ୍ଵାଗତ</h1>
         <p>ସର୍ବୋତ୍ତମ ଅନୁଭବ ପାଇଁ, ଏହି ଘଣ୍ଟାକୁ ପୂର୍ଣ୍ଣ-ସ୍କ୍ରିନ୍ ଏବଂ ଲ୍ୟାଣ୍ଡସ୍କେପ୍ ମୋଡରେ ବ୍ୟବହାର କରନ୍ତୁ।</p>
@@ -176,6 +185,7 @@
     <div id="resize-modal" class="modal-overlay hidden"><div class="modal-content"><h2>ଆକାର ବଦଳାନ୍ତୁ</h2><div class="control-grid"><label for="timeSizeSlider">ସମୟ ଆକାର:</label><input type="range" id="timeSizeSlider" min="10" max="40" value="20" step="0.5"><label for="secondsSizeSlider">ସେକେଣ୍ଡ ଆକାର:</label><input type="range" id="secondsSizeSlider" min="2" max="15" value="6" step="0.2"><label for="dateSizeSlider">ତାରିଖ ଆକାର:</label><input type="range" id="dateSizeSlider" min="1" max="10" value="3" step="0.1"></div><button id="reset-settings-btn">ସମସ୍ତ ସେଟିଂସ୍ ରିସେଟ୍ କରନ୍ତୁ</button><p class="close-hint">ବନ୍ଦ କରିବା ପାଇଁ 'a' ଦବାନ୍ତୁ</p></div></div>
 
     <script>
+        // YOUR EXISTING JAVASCRIPT CODE IS UNCHANGED
         // DOM Elements
         const bodyEl = document.body;
         const mainContentEl = document.getElementById('main-content');
@@ -448,6 +458,21 @@
         }
 
         init();
+    </script>
+    
+    <!-- ADD THIS SCRIPT TO REGISTER THE SERVICE WORKER -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed: ', error);
+            });
+        });
+      }
     </script>
 </body>
 </html>
